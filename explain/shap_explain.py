@@ -1,11 +1,20 @@
 import shap
 import matplotlib.pyplot as plt
 
-def explain_model(model, X_test):
+def explain_model(model, X_test, churn_index):
     explainer = shap.TreeExplainer(model, X_test)
     shap_values = explainer(X_test)
 
     # Global feature importance
-    shap.summary_plot(shap_values[:,:,1], X_test, show=False)
-    plt.savefig("shap_summary.png")
+    shap.summary_plot(shap_values[:,:,1], X_test, show=False, max_display=20)
+    plt.yticks(rotation=0, fontsize=9)
+    plt.savefig("diagrams/shap_summary.png")
+    plt.close()
+
+    # Local explanation for the first predicted churn instance
+    shap.plots.waterfall(shap_values[churn_index,:,1], show=False, max_display=20)
+    plt.gcf().set_size_inches(10, 12)   # make the figure larger (width x height in inches)
+    plt.tight_layout() 
+    plt.savefig("diagrams/shap_waterfall.png")
+    plt.close()
 
