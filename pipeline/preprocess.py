@@ -3,8 +3,11 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from pipeline.loader import load_data
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.combine import SMOTETomek
 
-def preprocess(train_df, target_column, case="randomforest", sample_size=2000):
+def preprocess(train_df, target_column, case="randomforest", sample_size=2000, balance_strategy="smote"):
     drop_cols = ["id", "CustomerId", "Surname"]
     train_df = train_df.dropna()
     train_df = train_df.drop(columns=drop_cols)
@@ -33,9 +36,9 @@ def preprocess(train_df, target_column, case="randomforest", sample_size=2000):
 
     # Case handling
     case = case.lower()
-    if case in ["randomforest", "xgboost"]:
+    if case in ["randomforest", "xgboost", "ebm"]:
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+            X, y, test_size=0.2, random_state=42, stratify=y
         )
     elif case == "linear":
         # Linear regression i sklearn forventer numpy
@@ -43,7 +46,8 @@ def preprocess(train_df, target_column, case="randomforest", sample_size=2000):
             X.to_numpy(dtype=np.float32),
             y.to_numpy(dtype=np.float32),
             test_size=0.2,
-            random_state=42
+            random_state=42,
+            stratify=y
         )
     elif case == "tsetlin":
         # Tsetlin-maskinen krever heltalls numpy arrays
@@ -51,11 +55,24 @@ def preprocess(train_df, target_column, case="randomforest", sample_size=2000):
             X.to_numpy(dtype=np.uint32),
             y.to_numpy(dtype=np.uint32),
             test_size=0.2,
-            random_state=42
+            random_state=42,
+            stratify=y
         )
 
     else:
         raise ValueError(f"Ukjent case: {case}")
+    
+
+        # Apply chosen balancing technique
+    if balance_strategy == "smote":
+        sm = SMOTE(random_state=42)
+        X_train, y_train = sm.fit_resample(X_train, y_train)
+    elif balance_strategy == "undersample":
+        rus = RandomUnderSampler(random_state=42)
+        X_train, y_train = rus.fit_resample(X_train, y_train)
+    elif balance_strategy == "smotetomek":
+        smt = SMOTETomek(random_state=42)
+        X_train, y_train = smt.fit_resample(X_train, y_train)
 
     return X_train, X_test, y_train, y_test
 

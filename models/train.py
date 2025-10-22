@@ -4,6 +4,8 @@ import xgboost as xgb
 from pyTsetlinMachine.tm import MultiClassTsetlinMachine
 import pandas as pd
 import matplotlib.pyplot as plt
+from interpret.glassbox import ExplainableBoostingClassifier
+
 
 def train_model(X_train, y_train, case="randomforest"):
     case = case.lower()
@@ -27,6 +29,10 @@ def train_model(X_train, y_train, case="randomforest"):
             use_label_encoder=False,
             eval_metric="logloss"
         )
+        model.fit(X_train, y_train)
+
+    elif case == "ebm":
+        model = ExplainableBoostingClassifier(random_state=42, interactions=5)
         model.fit(X_train, y_train)
 
     elif case == "linear":
